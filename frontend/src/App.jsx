@@ -1,21 +1,16 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
-  const [status, setStatus] = useState("Checking...");
-
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/health")
-      .then((res) => setStatus(`${res.data.app}: ${res.data.status}`))
-      .catch(() => setStatus("Backend not reachable"));
-  }, []);
-
   return (
-    <div style={{ padding: 40, fontFamily: "sans-serif" }}>
-      <h1>StudyTwin AI</h1>
-      <p>Backend status: {status}</p>
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+    </Routes>
   );
 }
 
