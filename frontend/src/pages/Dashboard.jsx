@@ -10,7 +10,7 @@ function Dashboard() {
           <p className="mt-2 text-4xl font-bold text-sky-400">--%</p>
         </div>
         <div className="rounded-2xl bg-slate-900 p-6">
-          <p className="text-slate-400">Strong Topics</p>
+          <p className="text-success-400">Strong Topics</p>
           <p className="mt-2 text-slate-500">No data yet</p>
         </div>
         <div className="rounded-2xl bg-slate-900 p-6">
