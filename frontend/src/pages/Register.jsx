@@ -86,7 +86,7 @@ function Register() {
         </div>
 
         <p className="mt-4 text-sm text-slate-400">
-          Already have an account?{" "}
+          Already have an account ?{" "}
           <Link
             to="/login"
             className="text-indigo-400 hover:underline"
