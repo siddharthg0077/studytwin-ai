@@ -7,7 +7,7 @@ function Logo() {
         <BrainCircuit className="h-6 w-6 text-white" />
       </div>
       <span className="text-xl font-semibold tracking-tight">
-        StudyTwin <span className="text-gradient">AI</span>
+        StudyTwin <span className="text-gradient">A I </span>
       </span>
     </div>
   );
