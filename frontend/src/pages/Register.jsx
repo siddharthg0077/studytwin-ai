@@ -88,7 +88,7 @@ function Register() {
         />
 
         {confirmPassword && password !== confirmPassword && (
-          <p className="text-sm text-rose-300">Passwords do not match</p>
+          <p className="text-sm text-rose-300">Your passwords do not match</p>
         )}
 
         <motion.button
