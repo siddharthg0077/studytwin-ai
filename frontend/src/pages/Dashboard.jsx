@@ -1,8 +1,14 @@
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, TrendingUp, Target, Flame, BookOpen, Sparkles } from "lucide-react";
+import {
+  LogOut, TrendingUp, Target, Flame, Sparkles, Plus, FolderPlus, Loader2,
+} from "lucide-react";
+import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import Logo from "../components/Logo";
+import SubjectCard from "../components/SubjectCard";
+import AddNameModal from "../components/AddNameModal";
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.12 } } };
 const item = {
@@ -14,7 +20,7 @@ function ScoreRing({ value }) {
   const r = 52;
   const c = 2 * Math.PI * r;
   return (
-    <div className="relative h-36 w-36">
+    <div className="relative h-36 w-36 shrink-0">
       <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
         <defs>
           <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
@@ -24,13 +30,8 @@ function ScoreRing({ value }) {
         </defs>
         <circle cx="60" cy="60" r={r} stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="none" />
         <motion.circle
-          cx="60"
-          cy="60"
-          r={r}
-          stroke="url(#ring)"
-          strokeWidth="10"
-          fill="none"
-          strokeLinecap="round"
+          cx="60" cy="60" r={r}
+          stroke="url(#ring)" strokeWidth="10" fill="none" strokeLinecap="round"
           strokeDasharray={c}
           initial={{ strokeDashoffset: c }}
           animate={{ strokeDashoffset: c * (1 - value / 100) }}
@@ -44,18 +45,27 @@ function ScoreRing({ value }) {
   );
 }
 
-function StatCard({ icon: Icon, label, children, color }) {
+function TopicList({ icon: Icon, label, color, topics, emptyText }) {
   return (
-    <motion.div
-      variants={item}
-      whileHover={{ y: -6 }}
-      className="glass rounded-2xl p-6"
-    >
+    <motion.div variants={item} whileHover={{ y: -6 }} className="glass rounded-2xl p-6">
       <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${color}`}>
         <Icon className="h-6 w-6 text-white" />
       </div>
       <p className="text-sm text-white/60">{label}</p>
-      <div className="mt-1">{children}</div>
+      <div className="mt-2 space-y-1.5">
+        {topics.length === 0 ? (
+          <p className="text-white/40">{emptyText}</p>
+        ) : (
+          topics.map((t) => (
+            <p key={t._id} className="flex justify-between text-sm">
+              <span>
+                {t.name} <span className="text-white/40">({t.subjectName})</span>
+              </span>
+              <span className="text-white/60">{t.score}%</span>
+            </p>
+          ))
+        )}
+      </div>
     </motion.div>
   );
 }
@@ -64,10 +74,61 @@ function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [subjectModal, setSubjectModal] = useState(false);
+  const [topicModalFor, setTopicModalFor] = useState(null);
+
+  const loadData = useCallback(async () => {
+    try {
+      const { data } = await api.get("/subjects/overview");
+      setSubjects(data);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
+
+  const addSubject = async (name) => {
+    await api.post("/subjects", { name });
+    await loadData();
+  };
+
+  const addTopic = async (name) => {
+    await api.post(`/subjects/${topicModalFor._id}/topics`, { name });
+    await loadData();
+  };
+
+  // Derived data: computed from state on every render
+  const allTopics = subjects.flatMap((s) =>
+    s.topics.map((t) => ({ ...t, subjectName: s.name }))
+  );
+  const studied = allTopics.filter((t) => t.status !== "new");
+  const learningScore = studied.length
+    ? Math.round(studied.reduce((sum, t) => sum + t.score, 0) / studied.length)
+    : 0;
+  const strong = allTopics
+    .filter((t) => t.status === "strong")
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  const weak = allTopics
+    .filter((t) => t.status === "weak")
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3);
+  const firstNew = allTopics.find((t) => t.status === "new");
+
+  let recommendation = "Add a subject to get started";
+  if (weak[0]) recommendation = `Revise ${weak[0].name} in ${weak[0].subjectName}`;
+  else if (firstNew) recommendation = `Start learning ${firstNew.name} in ${firstNew.subjectName}`;
+  else if (subjects.length) recommendation = "Add more topics to keep growing";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -92,42 +153,89 @@ function Dashboard() {
         </motion.div>
 
         <div className="mt-8 grid gap-5 md:grid-cols-3">
-          <motion.div
-            variants={item}
-            className="glass flex items-center gap-6 rounded-2xl p-6 md:row-span-1"
-          >
-            {/* demo value: replaced with real data in the next step */}
-            <ScoreRing value={74} />
+          <motion.div variants={item} className="glass flex items-center gap-6 rounded-2xl p-6">
+            <ScoreRing value={learningScore} />
             <div>
               <p className="text-sm text-white/60">Learning Score</p>
               <p className="mt-1 flex items-center gap-1 text-sm text-emerald-300">
-                <TrendingUp className="h-4 w-4" /> Improving
+                <TrendingUp className="h-4 w-4" /> {studied.length} topics scored
               </p>
             </div>
           </motion.div>
 
-          <StatCard icon={Target} label="Strong Topics" color="bg-emerald-500/80">
-            <p className="text-white/40">No data yet</p>
-          </StatCard>
-
-          <StatCard icon={Flame} label="Needs Attention" color="bg-rose-500/80">
-            <p className="text-white/40">No data yet</p>
-          </StatCard>
+          <TopicList
+            icon={Target}
+            label="Strong Topics"
+            color="bg-emerald-500/80"
+            topics={strong}
+            emptyText="No strong topics yet"
+          />
+          <TopicList
+            icon={Flame}
+            label="Needs Attention"
+            color="bg-rose-500/80"
+            topics={weak}
+            emptyText="Nothing weak. Nice."
+          />
         </div>
 
-        <motion.div variants={item} className="glass mt-5 rounded-2xl p-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/80">
-              <Sparkles className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-white/60">Today's recommendation</p>
-              <p className="font-semibold">Upload notes to get started</p>
-            </div>
-            <BookOpen className="ml-auto h-6 w-6 text-white/30" />
+        <motion.div variants={item} className="glass mt-5 flex items-center gap-3 rounded-2xl p-6">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/80">
+            <Sparkles className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <p className="text-sm text-white/60">Today's recommendation</p>
+            <p className="font-semibold">{recommendation}</p>
           </div>
         </motion.div>
+
+        <motion.div variants={item} className="mt-10 flex items-center justify-between">
+          <h2 className="text-2xl font-semibold">Your subjects</h2>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setSubjectModal(true)}
+            className="flex items-center gap-2 rounded-xl bg-linear-to-r from-violet-500 to-cyan-500 px-4 py-2 text-sm font-semibold shadow-lg shadow-violet-500/30"
+          >
+            <Plus className="h-4 w-4" /> Add subject
+          </motion.button>
+        </motion.div>
       </motion.div>
+
+      <div className="mt-5">
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+          </div>
+        ) : subjects.length === 0 ? (
+          <div className="glass flex flex-col items-center rounded-2xl py-16 text-center">
+            <FolderPlus className="h-12 w-12 text-white/30" />
+            <p className="mt-4 text-lg font-medium">No subjects yet</p>
+            <p className="text-white/50">Add your first subject to build your StudyTwin.</p>
+          </div>
+        ) : (
+          <div className="grid gap-5 md:grid-cols-2">
+            {subjects.map((s) => (
+              <SubjectCard key={s._id} subject={s} onAddTopic={setTopicModalFor} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <AddNameModal
+        open={subjectModal}
+        onClose={() => setSubjectModal(false)}
+        title="Add subject"
+        placeholder="e.g. DBMS"
+        onSubmit={addSubject}
+      />
+      <AddNameModal
+        open={!!topicModalFor}
+        onClose={() => setTopicModalFor(null)}
+        title={`Add topic to ${topicModalFor?.name ?? ""}`}
+        placeholder="e.g. Normalization"
+        onSubmit={addTopic}
+      />
     </div>
   );
 }

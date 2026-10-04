@@ -19,10 +19,12 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
+
     setLoading(true);
     try {
       await register(name, email, password);
@@ -49,54 +51,70 @@ function Register() {
         </motion.p>
       )}
 
-        <div className="mt-6 space-y-4">
-          <input
-            type="text"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="w-full rounded-lg bg-slate-800 px-4 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
-          />
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <InputField
+          icon={User}
+          type="text"
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <InputField
+          icon={Mail}
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <InputField
+          icon={Lock}
+          type="password"
+          placeholder="Password (min 6 characters)"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          minLength={6}
+          required
+        />
+        <InputField
+          icon={Lock}
+          type="password"
+          placeholder="Confirm password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          minLength={6}
+          required
+        />
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full rounded-lg bg-slate-800 px-4 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
-          />
+        {confirmPassword && password !== confirmPassword && (
+          <p className="text-sm text-rose-300">Your passwords do not match</p>
+        )}
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full rounded-lg bg-slate-800 px-4 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
-          >
-            {loading ? "Registering..." : "Register"}
-          </button>
-        </div>
-
-        <p className="mt-4 text-sm text-slate-400">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="text-indigo-400 hover:underline"
-          >
-            Login
-          </Link>
-        </p>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          type="submit"
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-violet-500 via-fuchsia-500 to-cyan-500 py-3 font-semibold text-white shadow-lg shadow-violet-500/30 disabled:opacity-60"
+        >
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              Register <ArrowRight className="h-5 w-5" />
+            </>
+          )}
+        </motion.button>
       </form>
-    </div>
+
+      <p className="mt-6 text-sm text-white/60">
+        Already have an account?{" "}
+        <Link to="/login" className="font-medium text-violet-300 hover:underline">
+          Login
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }
 
