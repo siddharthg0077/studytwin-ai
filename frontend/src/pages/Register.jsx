@@ -1,23 +1,29 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { User, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import AuthLayout from "../components/AuthLayout";
+import InputField from "../components/InputField";
 
 function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
     setLoading(true);
-
     try {
       await register(name, email, password);
       navigate("/dashboard");
@@ -29,24 +35,19 @@ function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-2xl bg-slate-900 p-8 shadow-xl"
-      >
-        <h1 className="text-2xl font-bold text-white">
-          Create an account
-        </h1>
+    <AuthLayout>
+      <h1 className="text-3xl font-bold">Create your StudyTwin</h1>
+      <p className="mt-1 text-white/60">AI that learns how you study</p>
 
-        <p className="mt-1 text-slate-400">
-          Register for your StudyTwin
-        </p>
-
-        {error && (
-          <p className="mt-4 rounded-lg bg-red-500/10 p-2 text-sm text-red-400">
-            {error}
-          </p>
-        )}
+      {error && (
+        <motion.p
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-300"
+        >
+          {error}
+        </motion.p>
+      )}
 
         <div className="mt-6 space-y-4">
           <input
@@ -86,7 +87,7 @@ function Register() {
         </div>
 
         <p className="mt-4 text-sm text-slate-400">
-          Already have an account ?{" "}
+          Already have an account?{" "}
           <Link
             to="/login"
             className="text-indigo-400 hover:underline"
