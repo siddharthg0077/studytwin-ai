@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import Logo from "../components/Logo";
 import SubjectCard from "../components/SubjectCard";
 import AddNameModal from "../components/AddNameModal";
+import DocumentsPanel from "../components/DocumentsPanel";
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.12 } } };
 const item = {
@@ -220,6 +221,11 @@ function Dashboard() {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="mt-12">
+        <h2 className="mb-5 text-2xl fo​nt-semibold">Study material</h2>
+        <DocumentsPanel />
       </div>
 
       <AddNameModal

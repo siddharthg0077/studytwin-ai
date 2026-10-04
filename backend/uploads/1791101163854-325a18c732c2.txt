@@ -1,0 +1,3 @@
+Normalization is the process of organizing data to reduce redundancy.
+1NF requires atomic values. 2NF removes partial dependencies.
+3NF removes transitive dependencies. BCNF is a stricter form of 3NF.
