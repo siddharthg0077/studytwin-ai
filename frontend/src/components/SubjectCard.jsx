@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { Library, Plus } from "lucide-react";
 import TopicBar from "./TopicBar";
 
-function SubjectCard({ subject, onAddTopic }) {
+function SubjectCard({ subject, onAddTopic, onDeleteTopic }) {
+  const count = subject.topics.length;
   return (
     <motion.div
       layout
@@ -17,7 +18,9 @@ function SubjectCard({ subject, onAddTopic }) {
         </div>
         <div>
           <h3 className="text-lg font-semibold">{subject.name}</h3>
-          <p className="text-sm text-white/50">{subject.topics.length} topics</p>
+          <p className="text-sm text-white/50">
+            {count} {count === 1 ? "topic" : "topics"}
+          </p>
         </div>
         <button
           onClick={() => onAddTopic(subject)}
@@ -28,10 +31,12 @@ function SubjectCard({ subject, onAddTopic }) {
       </div>
 
       <div className="mt-5 space-y-4">
-        {subject.topics.length === 0 ? (
+        {count === 0 ? (
           <p className="text-sm text-white/40">No topics yet. Add your first one.</p>
         ) : (
-          subject.topics.map((t) => <TopicBar key={t._id} topic={t} />)
+          subject.topics.map((t) => (
+            <TopicBar key={t._id} topic={t} onDelete={onDeleteTopic} />
+          ))
         )}
       </div>
     </motion.div>

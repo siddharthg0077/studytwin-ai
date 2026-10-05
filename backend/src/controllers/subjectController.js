@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Subject from "../models/Subject.js";
 import Topic from "../models/Topic.js";
 import { getStatus } from "../utils/topicStatus.js";
@@ -93,6 +94,22 @@ export const updateTopicScore = async (req, res) => {
     if (!topic) return res.status(404).json({ message: "Topic not found" });
 
     res.json(topic);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteTopic = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.topicId)) {
+      return res.status(400).json({ message: "Invalid topic id" });
+    }
+    const topic = await Topic.findOneAndDelete({
+      _id: req.params.topicId,
+      user: req.user._id,
+    });
+    if (!topic) return res.status(404).json({ message: "Topic not found" });
+    res.json({ message: "Topic deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

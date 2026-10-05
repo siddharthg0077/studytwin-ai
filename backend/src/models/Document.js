@@ -9,6 +9,13 @@ const documentSchema = new mongoose.Schema(
     size: { type: Number },
     text: { type: String, required: true, select: false },
     charCount: { type: Number, default: 0 },
+    analysis: {
+      subjectName: String,
+      difficulty: String,
+      topics: [String],
+      keyConcepts: [String],
+    },
+    analyzedAt: { type: Date },
   },
   { timestamps: true }
 );
