@@ -1,0 +1,122 @@
+DATABASE NORMALIZATION - STUDY NOTES
+====================================
+
+1. WHAT IS NORMALIZATION?
+-------------------------
+Normalization is the process of organizing the tables and columns of a relational database to reduce data redundancy and improve data integrity. It works by decomposing a large, poorly structured table into smaller, well-structured tables linked by keys, following a series of rules called normal forms. Each successive normal form builds on the previous one and removes a particular kind of anomaly.
+
+The anomalies normalization tries to prevent:
+- Insertion anomaly: you cannot record a fact without also recording an unrelated one (e.g., you cannot add a new course until a student enrolls in it).
+- Update anomaly: the same fact is stored in many rows, so changing it in one place but not others leaves the data inconsistent.
+- Deletion anomaly: deleting one fact accidentally destroys another (e.g., deleting the last student in a course also deletes the course's details).
+
+Key background concepts:
+- Superkey: a set of attributes that uniquely identifies a row.
+- Candidate key: a minimal superkey (no attribute can be removed and still be unique).
+- Primary key: the candidate key chosen to identify rows.
+- Prime attribute: an attribute that is part of some candidate key. Non-prime attribute: one that is not part of any candidate key.
+- Functional dependency (FD): X -> Y means that if two rows agree on X, they must agree on Y. X is the determinant.
+- Partial dependency: a non-prime attribute depends on only part of a composite candidate key.
+- Transitive dependency: A -> B and B -> C (with B not determining A), so A -> C indirectly through B.
+
+2. FIRST NORMAL FORM (1NF)
+--------------------------
+A table is in 1NF if every column holds atomic (indivisible) values, there are no repeating groups or multi-valued columns, and each row can be uniquely identified (it has a primary key).
+
+Violation example:
+  StudentID | Name  | Phones
+  1         | Asha  | 98200, 98201
+  2         | Ravi  | 97100
+
+The Phones column stores multiple values in one cell. Fix: either put one phone per row (with StudentID + Phone as the key) or, better, create a separate StudentPhone(StudentID, Phone) table.
+
+Also, storing columns like Phone1, Phone2, Phone3 is a repeating group and violates 1NF in spirit.
+
+3. SECOND NORMAL FORM (2NF)
+---------------------------
+A table is in 2NF if it is in 1NF and has no partial dependencies: every non-prime attribute must depend on the WHOLE candidate key, not just part of it. 2NF is only a concern when the key is composite. A 1NF table with a single-column key is automatically in 2NF.
+
+Violation example: Enrollment(StudentID, CourseID, StudentName, Grade) with key (StudentID, CourseID).
+  - Grade depends on (StudentID, CourseID): fine.
+  - StudentName depends only on StudentID: a partial dependency.
+
+Fix: decompose into
+  Student(StudentID, StudentName)
+  Enrollment(StudentID, CourseID, Grade)
+
+Now StudentName is stored once per student rather than once per enrollment.
+
+4. THIRD NORMAL FORM (3NF)
+--------------------------
+A table is in 3NF if it is in 2NF and has no transitive dependencies of non-prime attributes on the key. Formally, for every non-trivial FD X -> A, at least one holds: X is a superkey, or A is a prime attribute. A common slogan: every non-key attribute must depend on "the key, the whole key, and nothing but the key."
+
+Violation example: Employee(EmpID, EmpName, DeptID, DeptName) with key EmpID.
+  - EmpID -> DeptID and DeptID -> DeptName, so EmpID -> DeptName is transitive.
+
+Fix: decompose into
+  Employee(EmpID, EmpName, DeptID)
+  Department(DeptID, DeptName)
+
+Now a department's name is updated in one place only. A 3NF decomposition can always be made both lossless-join and dependency-preserving.
+
+5. BOYCE-CODD NORMAL FORM (BCNF)
+--------------------------------
+BCNF is a stricter version of 3NF, sometimes called 3.5NF. A table is in BCNF if for every non-trivial functional dependency X -> Y, X is a superkey. The 3NF escape clause (Y may be a prime attribute) is removed.
+
+Where 3NF and BCNF differ: when a table has multiple overlapping composite candidate keys.
+
+Example: CourseTeaching(Student, Course, Instructor), where
+  - (Student, Course) -> Instructor
+  - Instructor -> Course (each instructor teaches only one course)
+Candidate keys: (Student, Course) and (Student, Instructor). The FD Instructor -> Course has a determinant (Instructor) that is not a superkey, so the table violates BCNF, even though it satisfies 3NF (Course is a prime attribute).
+
+Fix: decompose into
+  InstructorCourse(Instructor, Course)
+  StudentInstructor(Student, Instructor)
+
+Trade-off: BCNF decomposition is always lossless, but it may not preserve all functional dependencies. In the example, (Student, Course) -> Instructor can no longer be enforced within a single table. This is why some designers settle for 3NF.
+
+6. FOURTH NORMAL FORM (4NF)
+---------------------------
+4NF deals with multi-valued dependencies (MVDs). A multi-valued dependency X ->> Y means that for each X value there is a set of Y values independent of all other attributes. A table is in 4NF if it is in BCNF and has no non-trivial multi-valued dependencies except those where the determinant is a superkey.
+
+Example: Person(Name, Skill, Language), where a person's skills and languages are independent. To record every combination you must store the cross product (Asha-SQL-English, Asha-SQL-Hindi, Asha-Python-English, ...), which is highly redundant.
+
+Fix: split into PersonSkill(Name, Skill) and PersonLanguage(Name, Language).
+
+7. FIFTH NORMAL FORM (5NF, or PJNF)
+-----------------------------------
+5NF (Project-Join Normal Form) deals with join dependencies. A table is in 5NF if it is in 4NF and every non-trivial join dependency is implied by the candidate keys. In practice, this means the table cannot be decomposed into smaller tables and then rejoined without either losing information or gaining spurious rows, unless the decomposition is already dictated by the keys.
+
+Classic example: Supplier-Part-Project, where a supplier supplies a part, a project uses the part, and the supplier works on the project, and the business rule is that if all three pairwise relationships hold, then the supplier supplies that part to that project. Such a table can be losslessly decomposed into three binary tables: (Supplier, Part), (Part, Project), (Supplier, Project). 5NF is rarely needed in real designs.
+
+8. OTHER NORMAL FORMS
+---------------------
+- Domain-Key Normal Form (DKNF): every constraint on the table is a logical consequence of domain constraints and key constraints. It is a theoretical ideal; a DKNF table has no modification anomalies, but it is not always achievable.
+- Sixth Normal Form (6NF): every join dependency is trivial, meaning each table has the primary key plus at most one other attribute. It is mostly used in temporal databases and data warehouses (e.g., anchor modeling) to track history of each attribute independently.
+- Elementary Key Normal Form (EKNF): a refinement between 3NF and BCNF.
+- Essential Tuple Normal Form (ETNF): a form between BCNF and 4NF, concerned with certain join dependencies.
+
+9. QUICK COMPARISON
+-------------------
+Form  | Requirement (in addition to the previous form)      | Removes
+------|------------------------------------------------------|----------------------------------
+1NF   | Atomic values, no repeating groups, has a key        | Multi-valued / composite cells
+2NF   | No partial dependency on a composite key             | Partial dependencies
+3NF   | No transitive dependency of non-prime attributes     | Transitive dependencies
+BCNF  | Every determinant is a superkey                      | Remaining FD-based anomalies
+4NF   | No non-trivial multi-valued dependencies             | Independent multi-valued facts
+5NF   | Join dependencies implied by candidate keys          | Join-based redundancy
+
+10. DENORMALIZATION AND PRACTICAL ADVICE
+----------------------------------------
+Normalization improves integrity and reduces storage, but highly normalized schemas need more joins, which can slow read-heavy queries. Denormalization deliberately reintroduces some redundancy (for example, storing a precomputed total or duplicating a name column) to speed up reads, at the cost of extra work to keep copies consistent. OLTP systems (banking, order entry) typically target 3NF or BCNF; OLAP and reporting systems (data warehouses) often use denormalized star or snowflake schemas.
+
+11. EXAM TIPS
+-------------
+- To find the highest normal form, first list the candidate keys, then check FDs in order: atomicity (1NF), partial dependencies (2NF), transitive dependencies (3NF), determinants that are not superkeys (BCNF).
+- Use attribute closure to find candidate keys: compute X+ and check if it contains all attributes.
+- If every attribute is prime, the table is automatically in 3NF.
+- If a table has only two attributes, it is automatically in BCNF.
+- BCNF decomposition is lossless but not always dependency-preserving; 3NF synthesis (using a minimal cover) is both lossless and dependency-preserving.
+- Always verify a decomposition with the lossless-join test: the common attributes of the two resulting tables must be a key of at least one of them.

@@ -77,6 +77,7 @@ function Dashboard() {
 
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [subjectModal, setSubjectModal] = useState(false);
   const [topicModalFor, setTopicModalFor] = useState(null);
 
@@ -84,6 +85,9 @@ function Dashboard() {
     try {
       const { data } = await api.get("/subjects/overview");
       setSubjects(data);
+      setLoadError("");
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Could not load your data");
     } finally {
       setLoading(false);
     }
@@ -105,6 +109,11 @@ function Dashboard() {
 
   const addTopic = async (name) => {
     await api.post(`/subjects/${topicModalFor._id}/topics`, { name });
+    await loadData();
+  };
+
+  const deleteTopic = async (topic) => {
+    await api.delete(`/subjects/topics/${topic._id}`);
     await loadData();
   };
 
@@ -204,6 +213,11 @@ function Dashboard() {
       </motion.div>
 
       <div className="mt-5">
+        {loadError && (
+          <p className="mb-4 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-300">
+            {loadError}
+          </p>
+        )}
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-white/50" />
@@ -217,15 +231,20 @@ function Dashboard() {
         ) : (
           <div className="grid gap-5 md:grid-cols-2">
             {subjects.map((s) => (
-              <SubjectCard key={s._id} subject={s} onAddTopic={setTopicModalFor} />
+              <SubjectCard
+                key={s._id}
+                subject={s}
+                onAddTopic={setTopicModalFor}
+                onDeleteTopic={deleteTopic}
+              />
             ))}
           </div>
         )}
       </div>
 
       <div className="mt-12">
-        <h2 className="mb-5 text-2xl fo​nt-semibold">Study material</h2>
-        <DocumentsPanel />
+        <h2 className="mb-5 text-2xl font-semibold">Study material</h2>
+        <DocumentsPanel onAnalyzed={loadData} />
       </div>
 
       <AddNameModal

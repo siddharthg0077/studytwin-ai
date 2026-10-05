@@ -3,6 +3,10 @@ import path from "path";
 import mongoose from "mongoose";
 import Document from "../models/Document.js";
 import { extractText } from "../services/textExtractor.js";
+import Subject from "../models/Subject.js";
+import Topic from "../models/Topic.js";
+import { analyzeDocument } from "../ai/documentAnalyzer.js";
+import { friendlyAiError } from "../ai/aiService.js";
 
 const removeFile = (filePath) => fs.unlink(filePath).catch(() => {});
 
@@ -48,7 +52,7 @@ export const uploadDocument = async (req, res) => {
 export const getDocuments = async (req, res) => {
   try {
     const docs = await Document.find({ user: req.user._id })
-      .select("originalName size charCount createdAt")
+      .select("originalName size charCount createdAt analysis")
       .sort({ createdAt: -1 });
     res.json(docs);
   } catch (error) {
@@ -71,5 +75,48 @@ export const deleteDocument = async (req, res) => {
     res.json({ message: "Document deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const analyzeDoc = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid document id" });
+    }
+
+    const doc = await Document.findOne({ _id: req.params.id, user: req.user._id }).select(
+      "+text"
+    );
+    if (!doc) return res.status(404).json({ message: "Document not found" });
+
+    const result = await analyzeDocument(doc.text);
+
+    const subject = await Subject.findOneAndUpdate(
+      { user: req.user._id, name: result.subject },
+      { $setOnInsert: { user: req.user._id, name: result.subject } },
+      { upsert: true, new: true }
+    );
+
+    for (const name of result.topics) {
+      await Topic.updateOne(
+        { user: req.user._id, subject: subject._id, name },
+        { $setOnInsert: { score: 0, status: "new" } },
+        { upsert: true }
+      );
+    }
+
+    doc.analysis = {
+      subjectName: result.subject,
+      difficulty: result.difficulty,
+      topics: result.topics,
+      keyConcepts: result.keyConcepts,
+    };
+    doc.analyzedAt = new Date();
+    await doc.save();
+
+    res.json({ _id: doc._id, analysis: doc.analysis });
+  } catch (error) {
+    console.error("Analyze failed:", error.details || error.message);
+    res.status(500).json({ message: friendlyAiError(error) });
   }
 };

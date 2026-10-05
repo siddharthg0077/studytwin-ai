@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UploadCloud, FileText, Trash2, Loader2 } from "lucide-react";
+import { UploadCloud, FileText, Trash2, Loader2, Sparkles } from "lucide-react";
 import api from "../services/api";
 
 const formatSize = (bytes) =>
@@ -8,9 +8,10 @@ const formatSize = (bytes) =>
     ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
     : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
-function DocumentsPanel() {
+function DocumentsPanel({ onAnalyzed }) {
   const [docs, setDocs] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [analyzingId, setAnalyzingId] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef(null);
@@ -42,6 +43,20 @@ function DocumentsPanel() {
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const analyze = async (id) => {
+    setError("");
+    setAnalyzingId(id);
+    try {
+      await api.post(`/documents/${id}/analyze`);
+      await loadDocs();
+      if (onAnalyzed) await onAnalyzed();
+    } catch (err) {
+      setError(err.response?.data?.message || "Analysis failed");
+    } finally {
+      setAnalyzingId(null);
     }
   };
 
@@ -116,8 +131,22 @@ function DocumentsPanel() {
                 <p className="truncate text-sm font-medium">{d.originalName}</p>
                 <p className="text-xs text-white/50">
                   {formatSize(d.size)} · {d.charCount.toLocaleString()} characters read
+                  {d.analysis?.subjectName &&
+                    ` · ${d.analysis.subjectName}, ${d.analysis.topics.length} topics, ${d.analysis.difficulty}`}
                 </p>
               </div>
+              <button
+                onClick={() => analyze(d._id)}
+                disabled={analyzingId === d._id}
+                className="flex items-center gap-1.5 rounded-lg bg-violet-500/20 px-3 py-1.5 text-xs font-medium text-violet-200 hover:bg-violet-500/30 disabled:opacity-60"
+              >
+                {analyzingId === d._id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {d.analysis?.subjectName ? "Re-analyze" : "Analyze"}
+              </button>
               <button
                 onClick={() => remove(d._id)}
                 className="rounded-lg p-2 text-white/50 hover:bg-white/10 hover:text-rose-300"
