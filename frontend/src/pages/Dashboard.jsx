@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  LogOut, TrendingUp, Target, Flame, Sparkles, Plus, FolderPlus, Loader2,
+  LogOut, TrendingUp, Target, Flame, Sparkles, Plus, FolderPlus, Loader2, MessageSquare,
 } from "lucide-react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -10,6 +10,7 @@ import Logo from "../components/Logo";
 import SubjectCard from "../components/SubjectCard";
 import AddNameModal from "../components/AddNameModal";
 import DocumentsPanel from "../components/DocumentsPanel";
+
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.12 } } };
 const item = {
@@ -144,14 +145,24 @@ function Dashboard() {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <header className="flex items-center justify-between">
         <Logo />
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleLogout}
-          className="glass flex items-center gap-2 rounded-xl px-4 py-2 text-sm"
-        >
-          <LogOut className="h-4 w-4" /> Logout
-        </motion.button>
+
+        <div className="flex gap-3">
+          <Link
+            to="/tutor"
+            className="glass flex items-center gap-2 rounded-xl px-4 py-2 text-sm"
+          >
+            <MessageSquare className="h-4 w-4" /> AI Tutor
+          </Link>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleLogout}
+            className="glass flex items-center gap-2 rounded-xl px-4 py-2 text-sm"
+          >
+            <LogOut className="h-4 w-4" /> Logout
+          </motion.button>
+        </div>
       </header>
 
       <motion.div variants={container} initial="hidden" animate="show" className="mt-10">
