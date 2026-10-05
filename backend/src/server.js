@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
+import tutorRoutes from "./routes/tutorRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/documents", documentRoutes);
+app.use("/api/tutor", tutorRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", app: "StudyTwin AI" });

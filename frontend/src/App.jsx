@@ -4,6 +4,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuroraBackground from "./components/AuroraBackground";
+import Tutor from "./pages/Tutor";
 
 function App() {
   return (
@@ -21,7 +22,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/tutor"
+          element={
+            <ProtectedRoute>
+              <Tutor />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
+
     </>
   );
 }
