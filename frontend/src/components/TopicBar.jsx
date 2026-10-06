@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const styles = {
   new: { bar: "from-slate-400 to-slate-300", text: "text-white/50", label: "New" },
@@ -14,19 +15,25 @@ function TopicBar({ topic, onDelete }) {
   const s = styles[topic.status] || styles.new;
   return (
     <div className="group mb-1.5 flex items-center justify-between text-sm">
-  <span className="font-medium">{topic.name}</span>
-  <span className="flex items-center gap-2">
-    <span className={s.text}>
-      {s.label} {topic.status !== "new" && `· ${topic.score}%`}
-    </span>
-    <button
-      onClick={() => onDelete(topic)}
-      className="rounded p-1 text-white/30 opacity-0 transition hover:text-rose-300 group-hover:opacity-100"
-    >
-      <Trash2 className="h-3.5 w-3.5" />
-    </button>
-  </span>
-</div>
+      <span className="font-medium">{topic.name}</span>
+      <span className="flex items-center gap-2">
+        <span className={s.text}>
+          {s.label} {topic.status !== "new" && `· ${topic.score}%`}
+        </span>
+        <Link
+          to={`/quiz?topicId=${topic._id}&name=${encodeURIComponent(topic.name)}`}
+          className="rounded bg-white/10 px-2 py-0.5 text-xs opacity-0 transition hover:bg-violet-500/40 group-hover:opacity-100"
+        >
+          Quiz
+        </Link>
+        <button
+          onClick={() => onDelete(topic)}
+          className="rounded p-1 text-white/30 opacity-0 transition hover:text-rose-300 group-hover:opacity-100"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </span>
+    </div>
   );
 }
 

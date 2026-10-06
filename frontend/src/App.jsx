@@ -5,6 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuroraBackground from "./components/AuroraBackground";
 import Tutor from "./pages/Tutor";
+import Quiz from "./pages/Quiz";
+
 
 function App() {
   return (
@@ -27,6 +29,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Tutor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quiz"
+          element={
+            <ProtectedRoute>
+              <Quiz />
             </ProtectedRoute>
           }
         />
